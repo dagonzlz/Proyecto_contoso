@@ -1,27 +1,15 @@
 # Proyecto_contoso
 Analizar el rendimiento de una empresa a partir de las herramientas probabilísticas estudiadas en el curso y brindando recomendaciones que podría tomar la empresa para mejorar o corregir aspectos del negocio
-Proyecto 01: Principios de Análisis de Datos
+ 
 
-Caso de estudio: Contoso Sales
-
-
-
-================================================================================
-1. Descripción general del proyecto
-================================================================================
-
-
+2. Caso de estudio: Contoso Sales
 
 Este proyecto realiza un análisis exploratorio, estadístico y de negocio sobre
 los datos de ventas de la empresa ficticia Contoso, siguiendo un proceso ETL
 básico para transformar datos crudos en información útil para la toma de
 decisiones.
 
-
-
 El trabajo incluye:
-
-
 
   - Análisis preliminar de las tablas proporcionadas.
   - Limpieza y transformación de datos (fechas, formatos numéricos latinos).
@@ -35,16 +23,7 @@ El trabajo incluye:
   - Construcción de un dashboard interactivo en Power BI.
 
 
-
-================================================================================
-2. Estructura de carpetas
-================================================================================
-
-
-
 La carpeta del proyecto debe mantenerse con esta estructura:
-
-
 
   proy_contoso/
   │
@@ -65,10 +44,7 @@ La carpeta del proyecto debe mantenerse con esta estructura:
 
 
 
-================================================================================
 3. Archivos principales
-================================================================================
-
 
 
   proyecto_analisis_ventas.py
@@ -117,9 +93,7 @@ La carpeta del proyecto debe mantenerse con esta estructura:
 
 
 
-================================================================================
-4. Requisitos para ejecutar el script
-================================================================================
+4.  Requisitos para ejecutar el script
 
 
 
@@ -146,9 +120,8 @@ en Python 3.10, por lo que no es compatible con versiones anteriores.
 
 
 
-================================================================================
-5. Cómo ejecutar el script
-================================================================================
+ 5. Cómo ejecutar el script
+
 
 
 
@@ -165,9 +138,9 @@ en Python 3.10, por lo que no es compatible con versiones anteriores.
 
 
 
-================================================================================
 6. Sobre las rutas del proyecto
-================================================================================
+
+
 
 
 
@@ -186,9 +159,7 @@ mantenga la estructura de carpetas descrita en la sección 2.
 
 
 
-================================================================================
 7. Sobre el dashboard de Power BI
-================================================================================
 
 
 
@@ -201,12 +172,9 @@ Si se intenta actualizar los datos desde otra computadora, Power BI puede
 solicitar que se actualicen las rutas de origen apuntando a la carpeta
 outputs/ del proyecto en la nueva máquina.
 
-
-
-================================================================================
+ 
 8. Archivos generados por el script
-================================================================================
-
+ 
 
 
 El script genera 30 archivos CSV numerados, organizados en cuatro grupos:
@@ -234,11 +202,9 @@ El script genera 30 archivos CSV numerados, organizados en cuatro grupos:
       FactSales usando los métodos IQR y Z-score.
 
 
-
-================================================================================
+ 
 9. Recomendaciones
-================================================================================
-
+ 
 
 
   - Antes de ejecutar el script de nuevo, cerrar cualquier archivo CSV que
