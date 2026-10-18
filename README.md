@@ -4,7 +4,7 @@ Proyecto académico de análisis exploratorio, estadística descriptiva y métri
 
 ## Estado de la publicación
 
-El repositorio incluye la versión original del código y el Excel de dimensiones. La actualización del script adjunto, que incorpora las gráficas descritas más abajo, está pendiente de transferencia.
+El repositorio incluye el script actualizado con generación de gráficas y el Excel de dimensiones. El dashboard de dos páginas sigue pendiente de subida. FactSales.txt debe aportarse localmente para ejecutar el análisis completo.
 
 ## Qué hace el proyecto
 
@@ -71,7 +71,7 @@ La tabla de ventas debe incluir las columnas originales:
 
 ## Resultados
 
-La versión actualizada preparada para publicación genera 30 CSV numerados: análisis preliminar (01–15), modelo relacional y calendario (16–18), métricas comerciales (19–29) y resumen de valores atípicos (30). También genera visualizaciones en `graficas/`.
+El script genera 30 CSV numerados: análisis preliminar (01–15), modelo relacional y calendario (16–18), métricas comerciales (19–29) y resumen de valores atípicos (30). También genera visualizaciones en `graficas/`.
 
 Los resultados no se incluyen como si hubiesen sido recalculados: esta publicación no ejecutó el flujo completo porque falta el archivo de ventas.
 
