@@ -4,9 +4,7 @@ Proyecto académico de análisis exploratorio, estadística descriptiva y métri
 
 ## Estado de la publicación
 
-El repositorio incluye la versión original del código y el Excel de dimensiones. La actualización del script adjunto, que incorpora las gráficas descritas más abajo, está pendiente de transferencia. **FactSales.txt no está incluido**: se necesita una copia del archivo original utilizado en el proyecto para ejecutar el análisis completo. No debe sustituirse por otro conjunto de Contoso sin revisar su esquema.
-
-El dashboard de dos páginas está preparado, pero su transferencia a GitHub está pendiente. El informe académico PDF no se distribuye en este repositorio.
+El repositorio incluye la versión original del código y el Excel de dimensiones. La actualización del script adjunto, que incorpora las gráficas descritas más abajo, está pendiente de transferencia.
 
 ## Qué hace el proyecto
 
