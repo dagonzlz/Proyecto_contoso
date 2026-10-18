@@ -4,7 +4,12 @@ Proyecto académico de análisis exploratorio, estadística descriptiva y métri
 
 ## Estado de la publicación
 
-El repositorio incluye el script actualizado con generación de gráficas y el Excel de dimensiones. El dashboard de dos páginas sigue pendiente de subida. FactSales.txt debe aportarse localmente para ejecutar el análisis completo.
+El script actualizado y el Excel de dimensiones están incluidos en el repositorio. El dashboard de dos páginas y los datos de ventas se descargan desde la [versión v1.0.0](https://github.com/dagonzlz/Proyecto_contoso/releases/tag/v1.0.0).
+
+- [Descargar dashboard de Power BI](https://github.com/dagonzlz/Proyecto_contoso/releases/download/v1.0.0/Proyecto_Contoso_Dashboard.pbix).
+- [Descargar FactSales.zip](https://github.com/dagonzlz/Proyecto_contoso/releases/download/v1.0.0/FactSales.zip). Extraer `FactSales.txt` dentro de `data/` antes de ejecutar el script.
+
+El informe PDF no forma parte de esta publicación.
 
 ## Qué hace el proyecto
 
@@ -24,7 +29,7 @@ Proyecto_contoso/
 ├── data/
 │   ├── Contoso Sales.xlsx
 │   ├── README.md
-│   └── FactSales.txt             # aportar localmente; no incluido
+│   └── FactSales.txt             # extraer desde FactSales.zip (Releases)
 ├── proyecto_analisis_ventas.py
 ├── requirements.txt
 ├── outputs/                     # CSV generados al ejecutar
@@ -60,7 +65,7 @@ python -m pip install -r requirements.txt
 python proyecto_analisis_ventas.py
 ```
 
-Antes de ejecutar, colocar el archivo original `FactSales.txt` en `data/`. El script utiliza rutas relativas a su propia ubicación. Cerrar los CSV abiertos en Excel para evitar bloqueos de escritura. El volumen del conjunto completo puede requerir memoria y tiempo de procesamiento considerables.
+Antes de ejecutar, descargar `FactSales.zip` desde Releases y extraer `FactSales.txt` en `data/`. El script utiliza rutas relativas a su propia ubicación. Cerrar los CSV abiertos en Excel para evitar bloqueos de escritura. El volumen del conjunto completo puede requerir memoria y tiempo de procesamiento considerables.
 
 ## Datos de entrada
 
@@ -73,7 +78,7 @@ La tabla de ventas debe incluir las columnas originales:
 
 El script genera 30 CSV numerados: análisis preliminar (01–15), modelo relacional y calendario (16–18), métricas comerciales (19–29) y resumen de valores atípicos (30). También genera visualizaciones en `graficas/`.
 
-Los resultados no se incluyen como si hubiesen sido recalculados: esta publicación no ejecutó el flujo completo porque falta el archivo de ventas.
+Los resultados no se incluyen como si hubiesen sido recalculados: el flujo completo no se ha ejecutado durante esta publicación; los datos originales están disponibles en Releases.
 
 ## Dashboard de Power BI
 
