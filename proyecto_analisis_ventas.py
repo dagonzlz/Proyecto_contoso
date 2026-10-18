@@ -1,6 +1,10 @@
 from pathlib import Path
 import pandas as pd
+import warnings
 import numpy as np
+import matplotlib.pyplot as plt
+import csv
+warnings.filterwarnings("ignore")
 
 
 # ============================================================
@@ -327,14 +331,10 @@ def validar_ingresos(fact: pd.DataFrame) -> pd.DataFrame:
     return exportar_csv(validacion, "11_validacion_ingresos.csv")
 
 
-# ============================================================
-# MEJORA 2: DimCalendar incluida en el diccionario de tablas
-# ============================================================
 
 def generar_diccionario_tablas() -> pd.DataFrame:
     """
     Genera el diccionario de tablas del modelo.
-    MEJORA: se agrega DimCalendar, que antes faltaba aunque se creaba en ejecución.
     """
     datos = [
         ["FactSales", "Tabla de hechos", "Registro de venta por orden, producto, tienda, canal, promoción y fecha.", "Base para ingresos, ventas, devoluciones y métricas."],
@@ -345,7 +345,6 @@ def generar_diccionario_tablas() -> pd.DataFrame:
         ["DimProductSubCategory", "Tabla dimensional", "Subcategoría de producto.", "Conecta productos con categorías generales."],
         ["DimPromotion", "Tabla dimensional", "Promoción o campaña.", "Análisis por descuento o promoción."],
         ["DimStores", "Tabla dimensional", "Tienda de Contoso.", "Análisis por tienda, tipo, empleados y tamaño."],
-        # MEJORA 2: DimCalendar ahora aparece en el diccionario
         ["DimCalendar", "Tabla dimensional (derivada)", "Una fila por día del rango de ventas.", "Permite análisis temporal: año, mes, trimestre, día de semana. Creada a partir del rango de fechas de FactSales."],
     ]
     diccionario = pd.DataFrame(datos, columns=[
@@ -439,8 +438,7 @@ def generar_frecuencias_relevantes(tablas: dict[str, pd.DataFrame], fact: pd.Dat
     return exportar_csv(pd.DataFrame(registros), "15_frecuencias_categoricas_relevantes.csv")
 
 
-# ============================================================
-# MEJORA 1: DETECCIÓN DE VALORES ATÍPICOS (IQR + Z-SCORE)
+
 # ============================================================
 
 def detectar_outliers(fact: pd.DataFrame) -> pd.DataFrame:
@@ -682,9 +680,7 @@ def tablas_enriquecidas(fact: pd.DataFrame, tablas: dict[str, pd.DataFrame]) -> 
     }
 
 
-# ============================================================
-# MEJORA 3: CÁLCULO YoY ROBUSTO (TOLERANTE A AÑOS FALTANTES)
-# ============================================================
+
 
 def calcular_yoy_robusto(ventas_anio: pd.DataFrame) -> pd.DataFrame:
     """
@@ -766,7 +762,7 @@ def generar_metricas_negocio(fact: pd.DataFrame, tablas: dict[str, pd.DataFrame]
         ordenar_por="Total_ingresos"
     )
 
-    # MEJORA 3: YoY robusto usando merge en lugar de shift()
+
     ventas_anio = resumen_metricas(base["tiempo"], ["Anio"]).sort_values("Anio")
     ventas_anio = calcular_yoy_robusto(ventas_anio)
     exportar_csv(ventas_anio, "28_ventas_por_anio.csv", ordenar_por="Anio", ascendente=True)
@@ -776,9 +772,421 @@ def generar_metricas_negocio(fact: pd.DataFrame, tablas: dict[str, pd.DataFrame]
     ventas_mes["Acumulado_anio_cantidad_total"] = ventas_mes.groupby("Anio")["Cantidad_Total"].cumsum()
     exportar_csv(ventas_mes, "29_ventas_por_mes_acumulado.csv", ordenar_por="Anio", ascendente=True)
 
+# ============================================================
+# 5. GRÁFICAS DEL ANÁLISIS EXPLORATORIO Y DE NEGOCIO
+# ============================================================
+
+CARPETA_GRAFICAS = CARPETA_PROYECTO / "graficas"
+
+
+def guardar_histograma(
+    df: pd.DataFrame,
+    columna: str,
+    nombre_archivo: str,
+    titulo: str,
+    xlabel: str,
+    bins: int = 50,
+    limite_x: tuple[float, float] | None = None
+) -> None:
+    """Genera y guarda un histograma para una columna numérica continua."""
+    if columna not in df.columns:
+        print(f"No se encontró la columna {columna}. No se genera {nombre_archivo}.")
+        return
+
+    datos = pd.to_numeric(df[columna], errors="coerce").dropna()
+
+    if limite_x is not None:
+        datos = datos[(datos >= limite_x[0]) & (datos <= limite_x[1])]
+
+    if datos.empty:
+        print(f"La columna {columna} no tiene datos numéricos válidos.")
+        return
+
+    plt.figure(figsize=(8, 5))
+    plt.hist(datos, bins=bins, edgecolor="black")
+    plt.title(titulo)
+    plt.xlabel(xlabel)
+    plt.ylabel("Frecuencia")
+
+    if limite_x is not None:
+        plt.xlim(limite_x)
+
+    plt.tight_layout()
+    ruta = CARPETA_GRAFICAS / nombre_archivo
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+    print(f"Gráfica generada: {nombre_archivo}")
+
+
+def guardar_frecuencia_discreta(
+    df: pd.DataFrame,
+    columna: str,
+    nombre_archivo: str,
+    titulo: str,
+    xlabel: str,
+    limite_max: int | None = None
+) -> None:
+    """
+    Genera un gráfico de barras de frecuencias para variables discretas.
+    Se usa para SalesQuantity porque un histograma continuo la muestra como bloque sólido.
+    """
+    if columna not in df.columns:
+        print(f"No se encontró la columna {columna}. No se genera {nombre_archivo}.")
+        return
+
+    datos = pd.to_numeric(df[columna], errors="coerce").dropna()
+
+    if limite_max is not None:
+        datos = datos[datos <= limite_max]
+
+    if datos.empty:
+        print(f"La columna {columna} no tiene datos numéricos válidos.")
+        return
+
+    frecuencia = datos.value_counts().sort_index()
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(frecuencia.index.astype(str), frecuencia.values, edgecolor="black")
+    plt.title(titulo)
+    plt.xlabel(xlabel)
+    plt.ylabel("Frecuencia")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+
+    ruta = CARPETA_GRAFICAS / nombre_archivo
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+    print(f"Gráfica generada: {nombre_archivo}")
+
+
+def guardar_barras(
+    df: pd.DataFrame,
+    columna_x: str,
+    columna_y: str,
+    nombre_archivo: str,
+    titulo: str,
+    xlabel: str,
+    ylabel: str,
+    top: int | None = None
+) -> None:
+    """Genera y guarda un gráfico de barras a partir de una tabla resumida."""
+    if columna_x not in df.columns or columna_y not in df.columns:
+        print(
+            f"No se genera {nombre_archivo}. "
+            f"Columnas disponibles: {list(df.columns)}"
+        )
+        return
+
+    datos = df[[columna_x, columna_y]].copy()
+    datos[columna_y] = pd.to_numeric(datos[columna_y], errors="coerce")
+    datos = datos.dropna(subset=[columna_y])
+    datos = datos.sort_values(columna_y, ascending=False)
+
+    if top is not None:
+        datos = datos.head(top)
+
+    if datos.empty:
+        print(f"No hay datos válidos para generar {nombre_archivo}.")
+        return
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(datos[columna_x].astype(str), datos[columna_y])
+    plt.title(titulo)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+
+    ruta = CARPETA_GRAFICAS / nombre_archivo
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+    print(f"Gráfica generada: {nombre_archivo}")
+
+
+def guardar_barras_horizontales(
+    serie: pd.Series,
+    nombre_archivo: str,
+    titulo: str,
+    xlabel: str,
+    ylabel: str,
+    top: int | None = None
+) -> None:
+    """Genera un gráfico de barras horizontales desde una serie de frecuencias."""
+    datos = serie.dropna().copy()
+
+    if top is not None:
+        datos = datos.sort_values(ascending=False).head(top)
+    else:
+        datos = datos.sort_values(ascending=True)
+
+    if datos.empty:
+        print(f"No hay datos válidos para generar {nombre_archivo}.")
+        return
+
+    # Para que el mayor quede arriba en barras horizontales
+    datos = datos.sort_values(ascending=True)
+
+    plt.figure(figsize=(8, 5))
+    plt.barh(datos.index.astype(str), datos.values)
+    plt.title(titulo)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.tight_layout()
+
+    ruta = CARPETA_GRAFICAS / nombre_archivo
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+    print(f"Gráfica generada: {nombre_archivo}")
+
+
+def guardar_kde(
+    df: pd.DataFrame,
+    columna: str,
+    nombre_archivo: str,
+    titulo: str,
+    xlabel: str,
+    limite_x: tuple[float, float] | None = None
+) -> None:
+    """Genera una función de densidad tipo KDE para una variable numérica."""
+    if columna not in df.columns:
+        print(f"No se encontró la columna {columna}. No se genera {nombre_archivo}.")
+        return
+
+    datos = pd.to_numeric(df[columna], errors="coerce").dropna()
+
+    if limite_x is not None:
+        datos = datos[(datos >= limite_x[0]) & (datos <= limite_x[1])]
+
+    if datos.empty:
+        print(f"La columna {columna} no tiene datos numéricos válidos.")
+        return
+
+    plt.figure(figsize=(8, 5))
+    datos.plot(kind="kde")
+    plt.title(titulo)
+    plt.xlabel(xlabel)
+    plt.ylabel("Densidad")
+    plt.grid(True, alpha=0.4)
+
+    if limite_x is not None:
+        plt.xlim(limite_x)
+
+    plt.tight_layout()
+    ruta = CARPETA_GRAFICAS / nombre_archivo
+    plt.savefig(ruta, dpi=300)
+    plt.close()
+
+    print(f"Gráfica generada: {nombre_archivo}")
+
+
+def generar_graficas_catalogo(tablas: dict[str, pd.DataFrame]) -> None:
+    """Genera gráficas del catálogo: productos por marca y por categoría."""
+    if "DimProduct" not in tablas:
+        print("No se encontró DimProduct. No se generan gráficas de catálogo.")
+        return
+
+    dim_product = tablas["DimProduct"].copy()
+
+    # Cantidad de productos por marca
+    if "BrandName" in dim_product.columns:
+        productos_marca = dim_product["BrandName"].value_counts()
+        guardar_barras_horizontales(
+            productos_marca,
+            "09_productos_por_marca.png",
+            "Cantidad de productos por marca",
+            "Cantidad",
+            "Marca",
+            top=10
+        )
+    else:
+        print("No se encontró BrandName en DimProduct.")
+
+    # Cantidad de productos por categoría
+    requeridas = {"ProductSubcategoryKey"}
+    if not requeridas.issubset(dim_product.columns):
+        print("No se encontró ProductSubcategoryKey en DimProduct.")
+        return
+
+    if "DimProductSubCategory" not in tablas or "DimProductCategory" not in tablas:
+        print("No se encontraron tablas de subcategoría/categoría.")
+        return
+
+    dim_sub = tablas["DimProductSubCategory"].copy()
+    dim_cat = tablas["DimProductCategory"].copy()
+
+    columnas_sub = {"ProductSubcategoryKey", "ProductCategoryKey"}
+    columnas_cat = {"ProductCategoryKey", "ProductCategory"}
+
+    if not columnas_sub.issubset(dim_sub.columns) or not columnas_cat.issubset(dim_cat.columns):
+        print("No se encontraron columnas necesarias para categoría de producto.")
+        return
+
+    catalogo = (
+        dim_product
+        .merge(dim_sub[["ProductSubcategoryKey", "ProductCategoryKey"]], on="ProductSubcategoryKey", how="left")
+        .merge(dim_cat[["ProductCategoryKey", "ProductCategory"]], on="ProductCategoryKey", how="left")
+    )
+
+    productos_categoria = catalogo["ProductCategory"].value_counts()
+    guardar_barras_horizontales(
+        productos_categoria,
+        "10_productos_por_categoria_catalogo.png",
+        "Cantidad de productos por categoría",
+        "Cantidad",
+        "Categoría de producto"
+    )
+
+
+def generar_grafica_employee_count(tablas: dict[str, pd.DataFrame]) -> None:
+    """Genera la función de densidad y resumen estadístico de EmployeeCount."""
+    if "DimStores" not in tablas:
+        print("No se encontró DimStores. No se genera gráfica de EmployeeCount.")
+        return
+
+    dim_stores = tablas["DimStores"].copy()
+
+    if "EmployeeCount" not in dim_stores.columns:
+        print("No se encontró EmployeeCount en DimStores.")
+        return
+
+    dim_stores["EmployeeCount"] = pd.to_numeric(dim_stores["EmployeeCount"], errors="coerce")
+
+    guardar_kde(
+        dim_stores,
+        "EmployeeCount",
+        "11_densidad_employee_count.png",
+        "Función de densidad de EmployeeCount",
+        "EmployeeCount",
+        limite_x=(0, 500)
+    )
+
+    resumen = dim_stores["EmployeeCount"].describe().to_frame(name="EmployeeCount")
+    resumen.loc["skew"] = dim_stores["EmployeeCount"].skew()
+    resumen.loc["kurtosis"] = dim_stores["EmployeeCount"].kurtosis()
+    resumen.to_csv(CARPETA_GRAFICAS / "11_resumen_employee_count.csv", encoding="utf-8-sig")
+    print("Resumen generado: 11_resumen_employee_count.csv")
+
+def generar_graficas(fact_sales: pd.DataFrame, tablas: dict[str, pd.DataFrame]) -> None:
+    """
+    Genera gráficas en formato PNG para respaldar el análisis exploratorio
+    y las principales métricas de negocio.
+    """
+    print("\n=== GENERACIÓN DE GRÁFICAS ===")
+    CARPETA_GRAFICAS.mkdir(parents=True, exist_ok=True)
+
+    # Gráficas exploratorias de FactSales
+    guardar_frecuencia_discreta(
+        fact_sales,
+        "SalesQuantity",
+        "01_frecuencia_cantidad_vendida.png",
+        "Frecuencia de la cantidad vendida",
+        "Cantidad vendida",
+        limite_max=50
+    )
+
+    guardar_histograma(
+        fact_sales,
+        "ReturnQuantity",
+        "02_histograma_cantidad_devuelta.png",
+        "Distribución de la cantidad devuelta",
+        "Cantidad devuelta",
+        bins=10,
+        limite_x=(0, 6)
+    )
+
+    guardar_histograma(
+        fact_sales,
+        "Precio_unitario",
+        "03_histograma_precio_unitario.png",
+        "Distribución del precio unitario",
+        "Precio unitario",
+        bins=50
+    )
+
+    guardar_histograma(
+        fact_sales,
+        "Ingresos",
+        "04_histograma_ingresos.png",
+        "Distribución de ingresos por orden",
+        "Ingresos por orden",
+        bins=50
+    )
+
+     
+    generar_graficas_catalogo(tablas)
+    generar_grafica_employee_count(tablas)
+
+    # Gráficas de negocio desde los CSV generados por el mismo script
+    archivos_graficas = [
+        (
+            "20_ventas_por_categoria_producto.csv",
+            "ProductCategory",
+            "Total_ingresos",
+            "05_ventas_por_categoria.png",
+            "Ingresos por categoría de producto",
+            "Categoría",
+            "Ingresos",
+            None,
+        ),
+        (
+            "26_ventas_por_canal.csv",
+            "ChannelName",
+            "Total_ingresos",
+            "06_ventas_por_canal.png",
+            "Ingresos por canal de venta",
+            "Canal",
+            "Ingresos",
+            None,
+        ),
+        (
+            "28_ventas_por_anio.csv",
+            "Anio",
+            "Total_ingresos",
+            "07_ventas_por_anio.png",
+            "Ingresos por año",
+            "Año",
+            "Ingresos",
+            None,
+        ),
+        (
+            "24_ventas_por_ubicacion_geografica.csv",
+            "RegionCountryName",
+            "Total_ingresos",
+            "08_ventas_por_pais_top10.png",
+            "Diez países con mayor facturación",
+            "País",
+            "Ingresos",
+            10,
+        ),
+    ]
+
+    for archivo, columna_x, columna_y, nombre_png, titulo, xlabel, ylabel, top in archivos_graficas:
+        ruta_csv = CARPETA_SALIDA / archivo
+        if not ruta_csv.exists():
+            print(f"No se encontró {archivo}. No se genera la gráfica correspondiente.")
+            continue
+
+        tabla_resumen = pd.read_csv(ruta_csv)
+        guardar_barras(
+            tabla_resumen,
+            columna_x,
+            columna_y,
+            nombre_png,
+            titulo,
+            xlabel,
+            ylabel,
+            top=top,
+        )
+
+    print(f"Gráficas disponibles en: {CARPETA_GRAFICAS}")
+
 
 # ============================================================
-# 5. EJECUCIÓN PRINCIPAL
+# 6. EJECUCIÓN PRINCIPAL
 # ============================================================
 
 def main() -> None:
@@ -786,46 +1194,48 @@ def main() -> None:
 
     print("\n=== CARGA DE DATOS ===")
     tablas = cargar_excel_completo(ARCHIVO_EXCEL)
-    fact_raw = cargar_fact_sales(ARCHIVO_VENTAS)
-    muestra_fact = fact_raw.head(1000).copy()
-    fact = preparar_fact_sales(fact_raw)
+    fact_sales_raw = cargar_fact_sales(ARCHIVO_VENTAS)
+    muestra_fact_sales = fact_sales_raw.head(1000).copy()
+    fact_sales = preparar_fact_sales(fact_sales_raw)
 
     print("\n=== ANÁLISIS PRELIMINAR ===")
-    generar_resumen_tablas(tablas, fact, muestra_fact)
-    generar_tipos_datos(tablas, fact, muestra_fact)
-    generar_nulos_fact(fact)
-    generar_rango_fechas(fact)
-    generar_estadisticas_fact(fact)
+    generar_resumen_tablas(tablas, fact_sales, muestra_fact_sales)
+    generar_tipos_datos(tablas, fact_sales, muestra_fact_sales)
+    generar_nulos_fact(fact_sales)
+    generar_rango_fechas(fact_sales)
+    generar_estadisticas_fact(fact_sales)
 
-    frecuencias_empiricas(fact, "Devolución", "06_frecuencia_devolucion.csv")
-    frecuencias_empiricas(fact, "Venta_type", "07_frecuencia_tipo_venta.csv")
-    frecuencias_empiricas(fact, "Devolución_type", "08_frecuencia_tipo_devolucion.csv")
-    frecuencias_empiricas(fact, "SalesQuantity", "09_frecuencia_cantidad_vendida.csv")
-    frecuencias_empiricas(fact, "ReturnQuantity", "10_frecuencia_cantidad_devuelta.csv")
+    frecuencias_empiricas(fact_sales, "Devolución", "06_frecuencia_devolucion.csv")
+    frecuencias_empiricas(fact_sales, "Venta_type", "07_frecuencia_tipo_venta.csv")
+    frecuencias_empiricas(fact_sales, "Devolución_type", "08_frecuencia_tipo_devolucion.csv")
+    frecuencias_empiricas(fact_sales, "SalesQuantity", "09_frecuencia_cantidad_vendida.csv")
+    frecuencias_empiricas(fact_sales, "ReturnQuantity", "10_frecuencia_cantidad_devuelta.csv")
 
-    validar_ingresos(fact)
-    generar_diccionario_tablas()           # MEJORA 2: ahora incluye DimCalendar
-    generar_clasificacion_variables(tablas, fact)
-    generar_estadisticas_generales(tablas, fact)
-    generar_frecuencias_relevantes(tablas, fact)
+    validar_ingresos(fact_sales)
+    generar_diccionario_tablas()
+    generar_clasificacion_variables(tablas, fact_sales)
+    generar_estadisticas_generales(tablas, fact_sales)
+    generar_frecuencias_relevantes(tablas, fact_sales)
 
-    # MEJORA 1: detección de outliers
     print("\n=== DETECCIÓN DE OUTLIERS ===")
-    detectar_outliers(fact)
+    detectar_outliers(fact_sales)
 
     print("\n=== MODELO RELACIONAL ===")
-    tablas["DimCalendar"] = crear_dim_calendar(fact)
+    tablas["DimCalendar"] = crear_dim_calendar(fact_sales)
     relaciones = definir_relaciones()
-    validacion = validar_relaciones(tablas, fact, relaciones)
+    validacion = validar_relaciones(tablas, fact_sales, relaciones)
 
     print("\nResumen de relaciones:")
     print(validacion["Estado_validacion"].value_counts(dropna=False))
 
     print("\n=== MÉTRICAS DE NEGOCIO ===")
-    generar_metricas_negocio(fact, tablas)   # MEJORA 3: YoY robusto aplicado aquí
+    generar_metricas_negocio(fact_sales, tablas)
+
+    generar_graficas(fact_sales, tablas)
 
     print("\nProceso terminado correctamente.")
     print(f"Archivos CSV disponibles en: {CARPETA_SALIDA}")
+    print(f"Gráficas PNG disponibles en: {CARPETA_GRAFICAS}")
 
 
 if __name__ == "__main__":
